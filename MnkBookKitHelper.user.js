@@ -12,39 +12,72 @@
     'use strict';
 
     function main(jsonString) {
-        console.log("MnkBookKitHelper start.");
-        let pageContent = parsePageData(jsonString);
+        let stringResult = "";
+        try {
+            console.log("MnkBookKitHelper start.");
 
-        console.log("[MnkBookKitHelper] Parsed content:");
-        console.log(pageContent);
+            // Parse page content:
+            let pageContent = parsePageData(jsonString);
+            console.log("[MnkBookKitHelper] Parsed content:");
+            console.log(pageContent);
 
-        let errorsAndWarnings = extractErrorsAndWarningsFromAlgorithm(pageContent);
+            // Errors / warnings from Algorithm:
+            let errorsAndWarnings = extractErrorsAndWarningsFromAlgorithm(pageContent);
 
-        console.log("[MnkBookKitHelper] Errors and warnings from Algorithm:");
-        console.log(errorsAndWarnings || "No errors or warnings were found.");
+            // Count of errors / warnings from Algorithm:
+            let errorsAndWarningsCountString = errorsAndWarnings == null ? "No errors or warnings were found in Algorithm or no Algorithm found." : "Found " + errorsAndWarnings.length + " errors / warnings in Algorithm.";
+            if (errorsAndWarnings != null) {
+                console.log("[MnkBookKitHelper] Errors and warnings from Algorithm:");
+                console.log(errorsAndWarnings);
+            }
+            console.log(errorsAndWarningsCountString);
+            stringResult += errorsAndWarningsCountString + "\n";
 
-        let errorsList = extractErrorsAndWarningsFromErrorList(pageContent);
+            // Errors / warnings from Error List:
+            let errorsList = extractErrorsAndWarningsFromErrorList(pageContent);
 
-        console.log("[MnkBookKitHelper] Errors and warnings from Error List:");
-        console.log(errorsList || "No errors in Error List.");
+            // Count of errors / warnings from Error List:
+            let errorsListCountString = errorsList == null ? "No errors in Error List or no Error List found." : "Found " + errorsList.length + " errors / warnings in Error List.";
+            if (errorsList != null) {
+                console.log("[MnkBookKitHelper] Errors and warnings from Error List:");
+                console.log(errorsList);
+            }
+            console.log(errorsListCountString);
+            stringResult += errorsListCountString + "\n";
 
-        if (errorsAndWarnings == null || errorsList == null) {
-            console.log("[MnkBookKitHelper] Can not continue with comparing.")
-            return;
+            if (errorsAndWarnings == null || errorsList == null) {
+                let canNotContinueString = "Can not continue with comparing.";
+                console.log("[MnkBookKitHelper] " + canNotContinueString);
+                stringResult += canNotContinueString;
+                return stringResult;
+            }
+
+            let lengthDifferenceString = errorsAndWarnings.length === errorsList.length ? "Error List has the same length as count of found errors in Algorithm." : "ERROR LIST LENGTH IS DIFFERENT FROM COUNT OF ERRORS IN ALGORITHM!";
+            console.log("[MnkBookKitHelper] " + lengthDifferenceString);
+            stringResult += lengthDifferenceString + "\n";
+
+            let algorithmErrorCodes = getErrorCodesListFromAlgorithmErrors(errorsAndWarnings);
+            let errorListErrorCodes = getErrorCodesListFromErrorList(errorsList);
+
+            let missingInErrorList = compareLists(algorithmErrorCodes, errorListErrorCodes);
+            let missingInErrorListString = "Errors / Warnings from Algorithm, missing in Error List: " + (missingInErrorList.length > 0 ? missingInErrorList.join(", ") : "(nothing, it's OK)") + ".";
+            console.log("[MnkBookKitHelper] " + missingInErrorListString);
+            stringResult += missingInErrorListString + "\n";
+
+            let missingInAlgorithm = compareLists(errorListErrorCodes, algorithmErrorCodes);
+            let missingInAlgorithmString = "Errors / Warnings from Error List, missing in Algorithm: " + (missingInAlgorithm.length > 0 ? missingInAlgorithm.join(", ") : "(nothing, it's OK)") + ".";
+            console.log("[MnkBookKitHelper] " + missingInAlgorithmString);
+            stringResult += missingInAlgorithmString + "\n";
+
+            console.log("MnkBookKitHelper end.");
+        } catch (e) {
+            let errorString = "Processing of data has failed because of error: " + e.toString();
+            console.log("[MnkBookKitHelper] " + errorString);
+            console.log(e);
+            stringResult += errorString;
         }
 
-        console.log(errorsAndWarnings.length === errorsList.length ? "[MnkBookKitHelper] Error List has the same length as count of found errors in Algorithm." : "[MnkBookKitHelper] ERROR LIST LENGTH IS DIFFERENT FROM COUNT OF ERRORS IN ALGORITHM!");
-
-        let algorithmErrorCodes = getErrorCodesListFromAlgorithmErrors(errorsAndWarnings);
-        let errorListErrorCodes = getErrorCodesListFromErrorList(errorsList);
-
-        let missingInErrorList = compareLists(algorithmErrorCodes, errorListErrorCodes);
-        console.log("[MnkBookKitHelper] Errors / Warnings from Algorithm, missing in Error List: " + (missingInErrorList.length > 0 ? missingInErrorList.join(", ") : "(nothing, it's OK)") + ".");
-
-        let missingInAlgorithm = compareLists(errorListErrorCodes, algorithmErrorCodes);
-        console.log("[MnkBookKitHelper] Errors / Warnings from Error List, missing in Algorithm: " + (missingInAlgorithm.length > 0 ? missingInAlgorithm.join(", ") : "(nothing, it's OK)") + ".");
-
-        console.log("MnkBookKitHelper end.");
+        return stringResult;
     }
 
     function compareLists(baseList, againstList) {
@@ -459,9 +492,6 @@
                             mode = 0; // End of opening tag.
                             break;
                         case "\"":
-                            attributeValueOpeningChar = char;
-                            mode = 6;
-                            break;
                         case "'":
                             attributeValueOpeningChar = char;
                             mode = 6;
@@ -627,25 +657,40 @@
 
     function hideTextarea() {
         let textarea = document.getElementById("mnkBookKitHelperTextArea");
+        textarea.parentElement.removeChild(textarea);
+        let btn = document.getElementById("mnkBookKitHelperButton");
+        btn.onclick = createTextarea;
+        btn.innerHTML = "Check error list";
+    }
+
+    function processData() {
+        let textarea = document.getElementById("mnkBookKitHelperTextArea");
         let text = textarea.value;
         if (text !== "") {
-            main(text);
+            textarea.value = main(text);
+            let btn = document.getElementById("mnkBookKitHelperButton");
+            btn.onclick = hideTextarea;
+            btn.innerHTML = "Close text area";
+        } else {
+            hideTextarea();
         }
-        textarea.parentElement.removeChild(textarea);
-        document.getElementById("mnkBookKitHelperButton").onclick = createTextarea;
     }
 
     function createTextarea() {
         let textarea = document.createElement("TEXTAREA");
-        textarea.placeholder = "Paste book data here";
-        textarea.style.position = "absolute";
+        textarea.placeholder = "Paste book data from \"Page\" -> \"Update Source Data\" here.";
+        textarea.rows = 10;
+        textarea.cols = 100;
+        textarea.style.position = "fixed";
         textarea.style.right = "100px";
         textarea.style.top = "20px";
         textarea.style.zOrder = "255";
         textarea.style.backgroundColor = "yellow";
         textarea.id = "mnkBookKitHelperTextArea";
         document.body.appendChild(textarea);
-        document.getElementById("mnkBookKitHelperButton").onclick = hideTextarea;
+        let btn = document.getElementById("mnkBookKitHelperButton");
+        btn.onclick = processData;
+        btn.innerHTML = "Process data";
     }
 
     function createButton() {
@@ -653,7 +698,7 @@
         btn.innerHTML = "Check error list";
         btn.onclick = createTextarea;
         btn.style.cssText = "position: absolute; right: 0px, top: 0px; z-order: 255;";
-        btn.style.position = "absolute";
+        btn.style.position = "fixed";
         btn.style.right = "0px";
         btn.style.top = "0px";
         btn.style.zOrder = "255";
@@ -662,5 +707,5 @@
         document.body.appendChild(btn);
     }
 
-    setTimeout(createButton, 10000);
+    setTimeout(createButton, 5000);
 })();
