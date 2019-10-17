@@ -187,26 +187,30 @@
                     for (let sectionKey of sectionKeys) {
                         if (sectionKey === "content") {
                             let content = section[sectionKey];
-                            let childLsi = extractChildWith(content, "name", "UU5.Bricks.Lsi");
-                            if (childLsi != null) {
-                                let childLsiItem = extractChildWith(childLsi.content, "name", "UU5.Bricks.Lsi.Item", "language", "en");
-                                if (childLsiItem != null) {
-                                    let childBrick = extractChildWith(childLsiItem.content, "name", brickName);
-                                    if (childBrick == null) {
-                                        let childSection = extractChildWith(childLsiItem.content, "name", "UU5.Bricks.Section");
-                                        if (childSection != null) {
-                                            childBrick = extractChildWith(childSection.content, "name", brickName);
+
+                            // Try to search through LSIs:
+                            let parent = content;
+                            do {
+                                let childLsi = extractChildWith(parent, "name", "UU5.Bricks.Lsi");
+                                if (childLsi != null) {
+                                    let childLsiItem = extractChildWith(childLsi.content, "name", "UU5.Bricks.Lsi.Item", "language", "en");
+                                    if (childLsiItem != null) {
+                                        let theBrick = tryToExtractTheBrickDataValue(childLsiItem.content, brickName);
+                                        if (theBrick != null) {
+                                            return theBrick;
                                         }
-                                    }
-                                    if (childBrick != null) {
-                                        let childBrickData = extractChildWith(childBrick.attributes, "name", "data");
-                                        if (childBrickData != null) {
-                                            return childBrickData.value;
-                                        }
+                                        parent = childLsiItem.content;
+                                        continue;
                                     }
                                 }
-                            }
+                                break;
+                            } while (parent != null);
 
+                            // Try to at least get the brick out of LSI:
+                            let theBrickOutOfLsi = tryToExtractTheBrickDataValue(content, brickName);
+                            if (theBrickOutOfLsi != null) {
+                                return theBrickOutOfLsi;
+                            }
                         }
                     }
                 }
@@ -214,6 +218,22 @@
             }
         }
         return null;
+    }
+
+    function tryToExtractTheBrickDataValue(parent, brickName) {
+        let childBrick = extractChildWith(parent, "name", brickName);
+        if (childBrick == null) {
+            let childSection = extractChildWith(parent, "name", "UU5.Bricks.Section");
+            if (childSection != null) {
+                childBrick = extractChildWith(childSection.content, "name", brickName);
+            }
+        }
+        if (childBrick != null) {
+            let childBrickData = extractChildWith(childBrick.attributes, "name", "data");
+            if (childBrickData != null) {
+                return childBrickData.value;
+            }
+        }
     }
 
     function extractChildWith(children, key, value, attributeKey, attributeValue) {
