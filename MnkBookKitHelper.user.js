@@ -187,6 +187,9 @@
                     for (let sectionKey of sectionKeys) {
                         if (sectionKey === "content") {
                             let content = section[sectionKey];
+                            if (content == null) {
+                                continue;
+                            }
 
                             // Try to search through LSIs:
                             let parent = content;
