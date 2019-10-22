@@ -106,12 +106,12 @@
             let type = error.type.charAt(0).toUpperCase() + error.type.slice(1).replace(/\n/g, "").trim();
             let message = error.message.replace(/\n/g, "").trim();
             let params = error.params.replace(/\n/g, "\\\\\\\\n").replace(/"/g, "\\\\\\\\\\\"").trim();
-            let props = `,\\n    \\"${params}\\"\\n  `;
-            let propsArray = props.split("\\\\\\\\n");
-            for (let j = 0; j < propsArray.length; j++) {
-                propsArray[j] = propsArray[j].replace(/\/\/.*$/, "").trim();
+            let paramsArray = params.split("\\\\\\\\n");
+            for (let j = 0; j < paramsArray.length; j++) {
+                paramsArray[j] = paramsArray[j].replace(/\/\/.*$/, "").trim();
             }
-            props = propsArray.join("\\\\\\\\n");
+            params = paramsArray.join("\\\\\\\\n");
+            let props = `,\\n    \\"${params}\\"\\n`;
 
             errorListString += `\\n  [\\n    \\"${code}\\",\\n    \\"${type}\\",\\n    \\"${message}\\"${props}  ]`;
             errorListString += i === errorsAndWarnings.length - 1 ? "" : ",";
