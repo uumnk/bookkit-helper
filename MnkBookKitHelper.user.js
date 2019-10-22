@@ -69,6 +69,14 @@
             console.log("[MnkBookKitHelper] " + missingInAlgorithmString);
             stringResult += missingInAlgorithmString + "\n";
 
+            // Generate error list
+            let generatedErrorListTitleString = "Generated Error List:";
+            stringResult += "\n" + generatedErrorListTitleString + "\n";
+            console.log("[MnkBookKitHelper] " + generatedErrorListTitleString);
+            let generatedErrorListString = generateErrorListString(errorsAndWarnings); // TODO second parameter error prefix
+            stringResult += generatedErrorListString + "\n";
+            console.log("[MnkBookKitHelper] " + generatedErrorListString);
+
             console.log("MnkBookKitHelper end.");
         } catch (e) {
             let errorString = "Processing of data has failed because of error: " + e.toString();
@@ -78,6 +86,40 @@
         }
 
         return stringResult;
+    }
+
+    function generateErrorListString(errorsAndWarnings, errorPrefix) {
+        errorPrefix = errorPrefix || "{uuApp}-{uuSubApp}/{uuCmd}/";
+        let errorListString = `  {` + "\n";
+        errorListString += `    "content": "<uu5string/>\\n<UU5.Bricks.Lsi>\\n  <UU5.Bricks.Lsi.Item language=\\"en\\">\\n    <UU5.Bricks.Section header=\\"Error List\\">\\n        <UU5.Bricks.Text>\\n          Error format: ${errorPrefix}{errorCode}\\n       </UU5.Bricks.Text>\\n      <UuApp.DesignKit.UuCmdErrorList data='<uu5json/>[`;
+        let usedErrors = [];
+        for (let i = 0; i < errorsAndWarnings.length; i++) {
+            let error = errorsAndWarnings[i];
+            let code = error.code.trim();
+
+            // Skip duplicate errors:
+            if (usedErrors.includes(code)) {
+                continue;
+            }
+            usedErrors.push(code);
+
+            let type = error.type.charAt(0).toUpperCase() + error.type.slice(1).replace(/\n/g, "").trim();
+            let message = error.message.replace(/\n/g, "").trim();
+            let params = error.params.replace(/\n/g, "\\\\\\\\n").replace(/"/g, "\\\\\\\\\\\"").trim();
+            let props = `,\\n    \\"${params}\\"\\n  `;
+            let propsArray = props.split("\\\\\\\\n");
+            for (let j = 0; j < propsArray.length; j++) {
+                propsArray[j] = propsArray[j].replace(/\/\/.*$/, "").trim();
+            }
+            props = propsArray.join("\\\\\\\\n");
+
+            errorListString += `\\n  [\\n    \\"${code}\\",\\n    \\"${type}\\",\\n    \\"${message}\\"${props}  ]`;
+            errorListString += i === errorsAndWarnings.length - 1 ? "" : ",";
+        }
+
+        errorListString += `\\n]'/>\\n    </UU5.Bricks.Section>\\n  </UU5.Bricks.Lsi.Item>\\n</UU5.Bricks.Lsi>"` + "\n";
+        errorListString += `  }`;
+        return errorListString;
     }
 
     function compareLists(baseList, againstList) {
@@ -704,6 +746,7 @@
         textarea.placeholder = "Paste book data from \"Page\" -> \"Update Source Data\" here.";
         textarea.rows = 10;
         textarea.cols = 100;
+        textarea.wrap = "off";
         textarea.style.position = "fixed";
         textarea.style.right = "100px";
         textarea.style.top = "20px";
@@ -718,7 +761,7 @@
 
     function createButton() {
         let btn = document.createElement("BUTTON");
-        btn.innerHTML = "Check error list";
+        btn.innerHTML = "Check / generate error list";
         btn.onclick = createTextarea;
         btn.style.cssText = "position: absolute; right: 0px, top: 0px; z-order: 255;";
         btn.style.position = "fixed";
