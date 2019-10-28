@@ -48,26 +48,36 @@
             if (errorsAndWarnings == null || errorsList == null) {
                 let canNotContinueString = "Can not continue with comparing.";
                 console.log("[MnkBookKitHelper] " + canNotContinueString);
-                stringResult += canNotContinueString;
-                return stringResult;
+                stringResult += canNotContinueString + "\n";
+            } else {
+                let lengthDifferenceString = errorsAndWarnings.length === errorsList.length ? "Error List has the same length as count of found errors in Algorithm." : "ERROR LIST LENGTH IS DIFFERENT FROM COUNT OF ERRORS IN ALGORITHM!";
+                console.log("[MnkBookKitHelper] " + lengthDifferenceString);
+                stringResult += lengthDifferenceString + "\n";
+
+                let algorithmErrorCodes = getErrorCodesListFromAlgorithmErrors(errorsAndWarnings);
+                let errorListErrorCodes = getErrorCodesListFromErrorList(errorsList);
+
+                let missingInErrorList = compareLists(algorithmErrorCodes, errorListErrorCodes);
+                let missingInErrorListString = "Errors / Warnings from Algorithm, missing in Error List: " + (missingInErrorList.length > 0 ? missingInErrorList.join(", ") : "(nothing, it's OK)") + ".";
+                console.log("[MnkBookKitHelper] " + missingInErrorListString);
+                stringResult += missingInErrorListString + "\n";
+
+                let missingInAlgorithm = compareLists(errorListErrorCodes, algorithmErrorCodes);
+                let missingInAlgorithmString = "Errors / Warnings from Error List, missing in Algorithm: " + (missingInAlgorithm.length > 0 ? missingInAlgorithm.join(", ") : "(nothing, it's OK)") + ".";
+                console.log("[MnkBookKitHelper] " + missingInAlgorithmString);
+                stringResult += missingInAlgorithmString + "\n";
             }
 
-            let lengthDifferenceString = errorsAndWarnings.length === errorsList.length ? "Error List has the same length as count of found errors in Algorithm." : "ERROR LIST LENGTH IS DIFFERENT FROM COUNT OF ERRORS IN ALGORITHM!";
-            console.log("[MnkBookKitHelper] " + lengthDifferenceString);
-            stringResult += lengthDifferenceString + "\n";
-
-            let algorithmErrorCodes = getErrorCodesListFromAlgorithmErrors(errorsAndWarnings);
-            let errorListErrorCodes = getErrorCodesListFromErrorList(errorsList);
-
-            let missingInErrorList = compareLists(algorithmErrorCodes, errorListErrorCodes);
-            let missingInErrorListString = "Errors / Warnings from Algorithm, missing in Error List: " + (missingInErrorList.length > 0 ? missingInErrorList.join(", ") : "(nothing, it's OK)") + ".";
-            console.log("[MnkBookKitHelper] " + missingInErrorListString);
-            stringResult += missingInErrorListString + "\n";
-
-            let missingInAlgorithm = compareLists(errorListErrorCodes, algorithmErrorCodes);
-            let missingInAlgorithmString = "Errors / Warnings from Error List, missing in Algorithm: " + (missingInAlgorithm.length > 0 ? missingInAlgorithm.join(", ") : "(nothing, it's OK)") + ".";
-            console.log("[MnkBookKitHelper] " + missingInAlgorithmString);
-            stringResult += missingInAlgorithmString + "\n";
+            if (errorsAndWarnings != null) {
+                // Generate error list
+                let errorPrefix = extractErrorPrefixFromAlgorithm(pageContent);
+                let generatedErrorListTitleString = "Generated Error List:";
+                stringResult += "\n" + generatedErrorListTitleString + "\n";
+                console.log("[MnkBookKitHelper] " + generatedErrorListTitleString);
+                let generatedErrorListString = generateErrorListString(errorsAndWarnings, errorPrefix);
+                stringResult += generatedErrorListString + "\n";
+                console.log("[MnkBookKitHelper] " + generatedErrorListString);
+            }
 
             console.log("MnkBookKitHelper end.");
         } catch (e) {
@@ -78,6 +88,46 @@
         }
 
         return stringResult;
+    }
+
+    function generateErrorListString(errorsAndWarnings, errorPrefix) {
+        if (errorPrefix) {
+            if (errorPrefix.charAt(errorPrefix.length - 1) !== "/") {
+                errorPrefix += "/";
+            }
+        } else {
+            errorPrefix = "{uuApp}-{uuSubApp}/{uuCmd}/";
+        }
+        let errorListString = `  {` + "\n";
+        errorListString += `    "content": "<uu5string/>\\n<UU5.Bricks.Lsi>\\n  <UU5.Bricks.Lsi.Item language=\\"en\\">\\n    <UU5.Bricks.Section header=\\"Error List\\">\\n        <UU5.Bricks.Text>\\n          Error format: ${errorPrefix}{errorCode}\\n       </UU5.Bricks.Text>\\n      <UuApp.DesignKit.UuCmdErrorList data='<uu5json/>[`;
+        let usedErrors = [];
+        for (let i = 0; i < errorsAndWarnings.length; i++) {
+            let error = errorsAndWarnings[i];
+            let code = error.code.trim();
+
+            // Skip duplicate errors and errors without code:
+            if (!code || usedErrors.includes(code)) {
+                continue;
+            }
+            usedErrors.push(code);
+
+            let type = error.type.charAt(0).toUpperCase() + error.type.slice(1).replace(/\n/g, "").trim();
+            let message = error.message.replace(/\n/g, "").trim();
+            let params = error.params.replace(/\n/g, "\\\\\\\\n").replace(/"/g, "\\\\\\\\\\\"").trim();
+            let paramsArray = params.split("\\\\\\\\n");
+            for (let j = 0; j < paramsArray.length; j++) {
+                paramsArray[j] = paramsArray[j].replace(/\/\/.*$/, "").trim();
+            }
+            params = paramsArray.join("\\\\\\\\n");
+            let props = `,\\n    \\"${params}\\"\\n`;
+
+            errorListString += `\\n  [\\n    \\"${code}\\",\\n    \\"${type}\\",\\n    \\"${message}\\"${props}  ]`;
+            errorListString += i === errorsAndWarnings.length - 1 ? "" : ",";
+        }
+
+        errorListString += `\\n]'/>\\n    </UU5.Bricks.Section>\\n  </UU5.Bricks.Lsi.Item>\\n</UU5.Bricks.Lsi>"` + "\n";
+        errorListString += `  }`;
+        return errorListString;
     }
 
     function compareLists(baseList, againstList) {
@@ -177,6 +227,14 @@
         return null;
     }
 
+    function extractErrorPrefixFromAlgorithm(pageContent) {
+        let childAlgorithmDataValue = extractBrickDataValue(pageContent, "UuApp.DesignKit.Algorithm");
+        if (childAlgorithmDataValue != null) {
+            return childAlgorithmDataValue.errorPrefix;
+        }
+        return null;
+    }
+
     function extractBrickDataValue(pageContent, brickName) {
         let pageKeys = Object.keys(pageContent);
         for (let pageKey of pageKeys) {
@@ -187,26 +245,33 @@
                     for (let sectionKey of sectionKeys) {
                         if (sectionKey === "content") {
                             let content = section[sectionKey];
-                            let childLsi = extractChildWith(content, "name", "UU5.Bricks.Lsi");
-                            if (childLsi != null) {
-                                let childLsiItem = extractChildWith(childLsi.content, "name", "UU5.Bricks.Lsi.Item", "language", "en");
-                                if (childLsiItem != null) {
-                                    let childBrick = extractChildWith(childLsiItem.content, "name", brickName);
-                                    if (childBrick == null) {
-                                        let childSection = extractChildWith(childLsiItem.content, "name", "UU5.Bricks.Section");
-                                        if (childSection != null) {
-                                            childBrick = extractChildWith(childSection.content, "name", brickName);
-                                        }
-                                    }
-                                    if (childBrick != null) {
-                                        let childBrickData = extractChildWith(childBrick.attributes, "name", "data");
-                                        if (childBrickData != null) {
-                                            return childBrickData.value;
-                                        }
-                                    }
-                                }
+                            if (content == null) {
+                                continue;
                             }
 
+                            // Try to search through LSIs:
+                            let parent = content;
+                            do {
+                                let childLsi = extractChildWith(parent, "name", "UU5.Bricks.Lsi");
+                                if (childLsi != null) {
+                                    let childLsiItem = extractChildWith(childLsi.content, "name", "UU5.Bricks.Lsi.Item", "language", "en");
+                                    if (childLsiItem != null) {
+                                        let theBrick = tryToExtractTheBrickDataValue(childLsiItem.content, brickName);
+                                        if (theBrick != null) {
+                                            return theBrick;
+                                        }
+                                        parent = childLsiItem.content;
+                                        continue;
+                                    }
+                                }
+                                break;
+                            } while (parent != null);
+
+                            // Try to at least get the brick out of LSI:
+                            let theBrickOutOfLsi = tryToExtractTheBrickDataValue(content, brickName);
+                            if (theBrickOutOfLsi != null) {
+                                return theBrickOutOfLsi;
+                            }
                         }
                     }
                 }
@@ -214,6 +279,22 @@
             }
         }
         return null;
+    }
+
+    function tryToExtractTheBrickDataValue(parent, brickName) {
+        let childBrick = extractChildWith(parent, "name", brickName);
+        if (childBrick == null) {
+            let childSection = extractChildWith(parent, "name", "UU5.Bricks.Section");
+            if (childSection != null) {
+                childBrick = extractChildWith(childSection.content, "name", brickName);
+            }
+        }
+        if (childBrick != null) {
+            let childBrickData = extractChildWith(childBrick.attributes, "name", "data");
+            if (childBrickData != null) {
+                return childBrickData.value;
+            }
+        }
     }
 
     function extractChildWith(children, key, value, attributeKey, attributeValue) {
@@ -660,7 +741,7 @@
         textarea.parentElement.removeChild(textarea);
         let btn = document.getElementById("mnkBookKitHelperButton");
         btn.onclick = createTextarea;
-        btn.innerHTML = "Check error list";
+        btn.innerHTML = "Check / generate error list";
     }
 
     function processData() {
@@ -681,6 +762,7 @@
         textarea.placeholder = "Paste book data from \"Page\" -> \"Update Source Data\" here.";
         textarea.rows = 10;
         textarea.cols = 100;
+        textarea.wrap = "off";
         textarea.style.position = "fixed";
         textarea.style.right = "100px";
         textarea.style.top = "20px";
@@ -695,7 +777,7 @@
 
     function createButton() {
         let btn = document.createElement("BUTTON");
-        btn.innerHTML = "Check error list";
+        btn.innerHTML = "Check / generate error list";
         btn.onclick = createTextarea;
         btn.style.cssText = "position: absolute; right: 0px, top: 0px; z-order: 255;";
         btn.style.position = "fixed";
