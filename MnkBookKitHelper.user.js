@@ -741,7 +741,7 @@
         textarea.parentElement.removeChild(textarea);
         let btn = document.getElementById("mnkBookKitHelperButton");
         btn.onclick = createTextarea;
-        btn.innerHTML = "Check error list";
+        btn.innerHTML = "Check / generate error list";
     }
 
     function processData() {
