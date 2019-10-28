@@ -48,34 +48,36 @@
             if (errorsAndWarnings == null || errorsList == null) {
                 let canNotContinueString = "Can not continue with comparing.";
                 console.log("[MnkBookKitHelper] " + canNotContinueString);
-                stringResult += canNotContinueString;
-                return stringResult;
+                stringResult += canNotContinueString + "\n";
+            } else {
+                let lengthDifferenceString = errorsAndWarnings.length === errorsList.length ? "Error List has the same length as count of found errors in Algorithm." : "ERROR LIST LENGTH IS DIFFERENT FROM COUNT OF ERRORS IN ALGORITHM!";
+                console.log("[MnkBookKitHelper] " + lengthDifferenceString);
+                stringResult += lengthDifferenceString + "\n";
+
+                let algorithmErrorCodes = getErrorCodesListFromAlgorithmErrors(errorsAndWarnings);
+                let errorListErrorCodes = getErrorCodesListFromErrorList(errorsList);
+
+                let missingInErrorList = compareLists(algorithmErrorCodes, errorListErrorCodes);
+                let missingInErrorListString = "Errors / Warnings from Algorithm, missing in Error List: " + (missingInErrorList.length > 0 ? missingInErrorList.join(", ") : "(nothing, it's OK)") + ".";
+                console.log("[MnkBookKitHelper] " + missingInErrorListString);
+                stringResult += missingInErrorListString + "\n";
+
+                let missingInAlgorithm = compareLists(errorListErrorCodes, algorithmErrorCodes);
+                let missingInAlgorithmString = "Errors / Warnings from Error List, missing in Algorithm: " + (missingInAlgorithm.length > 0 ? missingInAlgorithm.join(", ") : "(nothing, it's OK)") + ".";
+                console.log("[MnkBookKitHelper] " + missingInAlgorithmString);
+                stringResult += missingInAlgorithmString + "\n";
             }
 
-            let lengthDifferenceString = errorsAndWarnings.length === errorsList.length ? "Error List has the same length as count of found errors in Algorithm." : "ERROR LIST LENGTH IS DIFFERENT FROM COUNT OF ERRORS IN ALGORITHM!";
-            console.log("[MnkBookKitHelper] " + lengthDifferenceString);
-            stringResult += lengthDifferenceString + "\n";
-
-            let algorithmErrorCodes = getErrorCodesListFromAlgorithmErrors(errorsAndWarnings);
-            let errorListErrorCodes = getErrorCodesListFromErrorList(errorsList);
-
-            let missingInErrorList = compareLists(algorithmErrorCodes, errorListErrorCodes);
-            let missingInErrorListString = "Errors / Warnings from Algorithm, missing in Error List: " + (missingInErrorList.length > 0 ? missingInErrorList.join(", ") : "(nothing, it's OK)") + ".";
-            console.log("[MnkBookKitHelper] " + missingInErrorListString);
-            stringResult += missingInErrorListString + "\n";
-
-            let missingInAlgorithm = compareLists(errorListErrorCodes, algorithmErrorCodes);
-            let missingInAlgorithmString = "Errors / Warnings from Error List, missing in Algorithm: " + (missingInAlgorithm.length > 0 ? missingInAlgorithm.join(", ") : "(nothing, it's OK)") + ".";
-            console.log("[MnkBookKitHelper] " + missingInAlgorithmString);
-            stringResult += missingInAlgorithmString + "\n";
-
-            // Generate error list
-            let generatedErrorListTitleString = "Generated Error List:";
-            stringResult += "\n" + generatedErrorListTitleString + "\n";
-            console.log("[MnkBookKitHelper] " + generatedErrorListTitleString);
-            let generatedErrorListString = generateErrorListString(errorsAndWarnings); // TODO second parameter error prefix
-            stringResult += generatedErrorListString + "\n";
-            console.log("[MnkBookKitHelper] " + generatedErrorListString);
+            if (errorsAndWarnings != null) {
+                // Generate error list
+                let errorPrefix = extractErrorPrefixFromAlgorithm(pageContent);
+                let generatedErrorListTitleString = "Generated Error List:";
+                stringResult += "\n" + generatedErrorListTitleString + "\n";
+                console.log("[MnkBookKitHelper] " + generatedErrorListTitleString);
+                let generatedErrorListString = generateErrorListString(errorsAndWarnings, errorPrefix);
+                stringResult += generatedErrorListString + "\n";
+                console.log("[MnkBookKitHelper] " + generatedErrorListString);
+            }
 
             console.log("MnkBookKitHelper end.");
         } catch (e) {
@@ -89,7 +91,13 @@
     }
 
     function generateErrorListString(errorsAndWarnings, errorPrefix) {
-        errorPrefix = errorPrefix || "{uuApp}-{uuSubApp}/{uuCmd}/";
+        if (errorPrefix) {
+            if (errorPrefix.charAt(errorPrefix.length - 1) !== "/") {
+                errorPrefix += "/";
+            }
+        } else {
+            errorPrefix = "{uuApp}-{uuSubApp}/{uuCmd}/";
+        }
         let errorListString = `  {` + "\n";
         errorListString += `    "content": "<uu5string/>\\n<UU5.Bricks.Lsi>\\n  <UU5.Bricks.Lsi.Item language=\\"en\\">\\n    <UU5.Bricks.Section header=\\"Error List\\">\\n        <UU5.Bricks.Text>\\n          Error format: ${errorPrefix}{errorCode}\\n       </UU5.Bricks.Text>\\n      <UuApp.DesignKit.UuCmdErrorList data='<uu5json/>[`;
         let usedErrors = [];
@@ -97,8 +105,8 @@
             let error = errorsAndWarnings[i];
             let code = error.code.trim();
 
-            // Skip duplicate errors:
-            if (usedErrors.includes(code)) {
+            // Skip duplicate errors and errors without code:
+            if (!code || usedErrors.includes(code)) {
                 continue;
             }
             usedErrors.push(code);
@@ -215,6 +223,14 @@
         let childErrorListDataValue = extractBrickDataValue(pageContent, "UuApp.DesignKit.UuCmdErrorList");
         if (childErrorListDataValue != null) {
             return childErrorListDataValue;
+        }
+        return null;
+    }
+
+    function extractErrorPrefixFromAlgorithm(pageContent) {
+        let childAlgorithmDataValue = extractBrickDataValue(pageContent, "UuApp.DesignKit.Algorithm");
+        if (childAlgorithmDataValue != null) {
+            return childAlgorithmDataValue.errorPrefix;
         }
         return null;
     }
