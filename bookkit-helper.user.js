@@ -6,6 +6,7 @@
 // @author       Monika
 // @match        https://uuos9.plus4u.net/uu-bookkitg01-main/*
 // @grant        none
+// @require      error-list-generator.js
 // ==/UserScript==
 
 (function() {
@@ -74,7 +75,8 @@
                 let generatedErrorListTitleString = "Generated Error List:";
                 stringResult += "\n" + generatedErrorListTitleString + "\n";
                 console.log("[MnkBookKitHelper] " + generatedErrorListTitleString);
-                let generatedErrorListString = generateErrorListString(errorsAndWarnings, errorPrefix);
+                let errorListGenerator = new ErrorListGenerator();
+                let generatedErrorListString = errorListGenerator.generateErrorListString(errorsAndWarnings, errorPrefix);
                 stringResult += generatedErrorListString + "\n";
                 console.log("[MnkBookKitHelper] " + generatedErrorListString);
             }
@@ -88,46 +90,6 @@
         }
 
         return stringResult;
-    }
-
-    function generateErrorListString(errorsAndWarnings, errorPrefix) {
-        if (errorPrefix) {
-            if (errorPrefix.charAt(errorPrefix.length - 1) !== "/") {
-                errorPrefix += "/";
-            }
-        } else {
-            errorPrefix = "{uuApp}-{uuSubApp}/{uuCmd}/";
-        }
-        let errorListString = `  {` + "\n";
-        errorListString += `    "content": "<uu5string/>\\n<UU5.Bricks.Lsi>\\n  <UU5.Bricks.Lsi.Item language=\\"en\\">\\n    <UU5.Bricks.Section header=\\"Error List\\">\\n        <UU5.Bricks.Text>\\n          Error format: ${errorPrefix}{errorCode}\\n       </UU5.Bricks.Text>\\n      <UuApp.DesignKit.UuCmdErrorList data='<uu5json/>[`;
-        let usedErrors = [];
-        for (let i = 0; i < errorsAndWarnings.length; i++) {
-            let error = errorsAndWarnings[i];
-            let code = error.code.trim();
-
-            // Skip duplicate errors and errors without code:
-            if (!code || usedErrors.includes(code)) {
-                continue;
-            }
-            usedErrors.push(code);
-
-            let type = error.type.charAt(0).toUpperCase() + error.type.slice(1).replace(/\n/g, "").trim();
-            let message = error.message.replace(/\n/g, "").trim();
-            let params = error.params.replace(/\n/g, "\\\\\\\\n").replace(/"/g, "\\\\\\\\\\\"").trim();
-            let paramsArray = params.split("\\\\\\\\n");
-            for (let j = 0; j < paramsArray.length; j++) {
-                paramsArray[j] = paramsArray[j].replace(/\/\/.*$/, "").trim();
-            }
-            params = paramsArray.join("\\\\\\\\n");
-            let props = `,\\n    \\"${params}\\"\\n`;
-
-            errorListString += `\\n  [\\n    \\"${code}\\",\\n    \\"${type}\\",\\n    \\"${message}\\"${props}  ]`;
-            errorListString += i === errorsAndWarnings.length - 1 ? "" : ",";
-        }
-
-        errorListString += `\\n]'/>\\n    </UU5.Bricks.Section>\\n  </UU5.Bricks.Lsi.Item>\\n</UU5.Bricks.Lsi>"` + "\n";
-        errorListString += `  }`;
-        return errorListString;
     }
 
     function compareLists(baseList, againstList) {
