@@ -6,6 +6,7 @@
 // @author       Monika
 // @match        https://uuos9.plus4u.net/uu-bookkitg01-main/*
 // @grant        none
+// @require      gui.js
 // @require      bookkit-parser.js
 // @require      algorithm-parser.js
 // @require      error-list-parser.js
@@ -18,7 +19,12 @@
 (function() {
     'use strict';
 
-    function main(jsonString) {
+    function main() {
+        let gui = new Gui();
+        gui.createButton(processData);
+    }
+
+    function processData(jsonString) {
         let stringResult = "";
         try {
             console.log("MnkBookKitHelper start.");
@@ -101,58 +107,5 @@
         return stringResult;
     }
 
-    function hideTextarea() {
-        let textarea = document.getElementById("mnkBookKitHelperTextArea");
-        textarea.parentElement.removeChild(textarea);
-        let btn = document.getElementById("mnkBookKitHelperButton");
-        btn.onclick = createTextarea;
-        btn.innerHTML = "Check / generate error list";
-    }
-
-    function processData() {
-        let textarea = document.getElementById("mnkBookKitHelperTextArea");
-        let text = textarea.value;
-        if (text !== "") {
-            textarea.value = main(text);
-            let btn = document.getElementById("mnkBookKitHelperButton");
-            btn.onclick = hideTextarea;
-            btn.innerHTML = "Close text area";
-        } else {
-            hideTextarea();
-        }
-    }
-
-    function createTextarea() {
-        let textarea = document.createElement("TEXTAREA");
-        textarea.placeholder = "Paste book data from \"Page\" -> \"Update Source Data\" here.";
-        textarea.rows = 10;
-        textarea.cols = 100;
-        textarea.wrap = "off";
-        textarea.style.position = "fixed";
-        textarea.style.right = "100px";
-        textarea.style.top = "20px";
-        textarea.style.zOrder = "255";
-        textarea.style.backgroundColor = "yellow";
-        textarea.id = "mnkBookKitHelperTextArea";
-        document.body.appendChild(textarea);
-        let btn = document.getElementById("mnkBookKitHelperButton");
-        btn.onclick = processData;
-        btn.innerHTML = "Process data";
-    }
-
-    function createButton() {
-        let btn = document.createElement("BUTTON");
-        btn.innerHTML = "Check / generate error list";
-        btn.onclick = createTextarea;
-        btn.style.cssText = "position: absolute; right: 0px, top: 0px; z-order: 255;";
-        btn.style.position = "fixed";
-        btn.style.right = "0px";
-        btn.style.top = "0px";
-        btn.style.zOrder = "255";
-        btn.style.backgroundColor = "yellow";
-        btn.id = "mnkBookKitHelperButton";
-        document.body.appendChild(btn);
-    }
-
-    setTimeout(createButton, 5000); // TODO: refactor GUI methods somehow, the main function should run on the start, display GUI and then run a different method.
+    setTimeout(main, 5000);
 })();
