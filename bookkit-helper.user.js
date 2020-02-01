@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MnkBookKitHelper
-// @namespace    http://tampermonkey.net/
-// @version      0.1
+// @namespace    https://github.com/uumnk/bookkit-helper
+// @version      0.2
 // @description  Makes work with BookKit a little bit better.
 // @author       Monika
 // @match        https://uuos9.plus4u.net/uu-bookkitg01-main/*
