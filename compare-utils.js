@@ -1,6 +1,6 @@
 class CompareUtils {
 
-    compareLists(baseList, againstList) {
+    static compareLists(baseList, againstList) {
         let missingItems = [];
         let matchFound = false;
         for (let item of baseList) {

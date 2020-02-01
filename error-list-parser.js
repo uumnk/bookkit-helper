@@ -10,8 +10,7 @@ class ErrorListParser {
 
     extractErrorsAndWarningsFromErrorList(pageContent) {
         // TODO Quick implementation, write it better!
-        let bookkitParser = new BookkitParser();
-        let childErrorListDataValue = bookkitParser.extractBrickDataValue(pageContent, "UuApp.DesignKit.UuCmdErrorList");
+        let childErrorListDataValue = DataExtractUtils.extractBrickDataValue(pageContent, "UuApp.DesignKit.UuCmdErrorList");
         if (childErrorListDataValue != null) {
             return childErrorListDataValue;
         }

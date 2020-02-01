@@ -1,8 +1,7 @@
 class AlgorithmParser {
     extractErrorsAndWarningsFromAlgorithm(pageContent) {
         // TODO Quick implementation, write it better!
-        let bookkitParser = new BookkitParser();
-        let childAlgorithmDataValue = bookkitParser.extractBrickDataValue(pageContent, "UuApp.DesignKit.Algorithm");
+        let childAlgorithmDataValue = DataExtractUtils.extractBrickDataValue(pageContent, "UuApp.DesignKit.Algorithm");
         if (childAlgorithmDataValue != null) {
             let statementList = childAlgorithmDataValue.statementList;
             let flatStatementList = this._extractAllStatements(statementList);
@@ -26,8 +25,7 @@ class AlgorithmParser {
     }
 
     extractErrorPrefixFromAlgorithm(pageContent) {
-        let bookkitParser = new BookkitParser();
-        let childAlgorithmDataValue = bookkitParser.extractBrickDataValue(pageContent, "UuApp.DesignKit.Algorithm");
+        let childAlgorithmDataValue = DataExtractUtils.extractBrickDataValue(pageContent, "UuApp.DesignKit.Algorithm");
         if (childAlgorithmDataValue != null) {
             return childAlgorithmDataValue.errorPrefix;
         }

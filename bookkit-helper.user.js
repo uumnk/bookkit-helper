@@ -11,6 +11,8 @@
 // @require      error-list-parser.js
 // @require      compare-utils.js
 // @require      error-list-generator.js
+// @require      data-extract-utils.js
+// @require      data-display-utils.js
 // ==/UserScript==
 
 (function() {
@@ -65,13 +67,12 @@
                 let algorithmErrorCodes = algorithmParser.getErrorCodesListFromAlgorithmErrors(errorsAndWarnings);
                 let errorListErrorCodes = errorListParser.getErrorCodesListFromErrorList(errorsList);
 
-                let compareUtils = new CompareUtils();
-                let missingInErrorList = compareUtils.compareLists(algorithmErrorCodes, errorListErrorCodes);
+                let missingInErrorList = CompareUtils.compareLists(algorithmErrorCodes, errorListErrorCodes);
                 let missingInErrorListString = "Errors / Warnings from Algorithm, missing in Error List: " + (missingInErrorList.length > 0 ? missingInErrorList.join(", ") : "(nothing, it's OK)") + ".";
                 console.log("[MnkBookKitHelper] " + missingInErrorListString);
                 stringResult += missingInErrorListString + "\n";
 
-                let missingInAlgorithm = compareUtils.compareLists(errorListErrorCodes, algorithmErrorCodes);
+                let missingInAlgorithm = CompareUtils.compareLists(errorListErrorCodes, algorithmErrorCodes);
                 let missingInAlgorithmString = "Errors / Warnings from Error List, missing in Algorithm: " + (missingInAlgorithm.length > 0 ? missingInAlgorithm.join(", ") : "(nothing, it's OK)") + ".";
                 console.log("[MnkBookKitHelper] " + missingInAlgorithmString);
                 stringResult += missingInAlgorithmString + "\n";

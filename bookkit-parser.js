@@ -1,4 +1,11 @@
-class BookkitParser { // TODO: This class is still quite long, refactor it further.
+class BookkitParser {
+
+    /**
+     * Parse BookKit page source data (JSON). This methods converts the JSON string to object and then replaces content of each section with result of _parseSectionContent method.
+     *
+     * @param pageData Source data of a BookKit page (JSON string).
+     * @returns {object} Object made of source data with content of each section replaced with result of _parseSectionContent method.
+     */
     parsePageData(pageData) {
         let page = JSON.parse(pageData);
 
@@ -13,17 +20,15 @@ class BookkitParser { // TODO: This class is still quite long, refactor it furth
                         if (sectionKey === "content") {
                             let content = section[sectionKey];
 
-                            // DEBUG ONLY:
+                            // DEBUG ONLY: // TODO: make tests instead of these debug console.log things.
                             // console.log(content.length);
                             // console.log(content);
 
-                            let parsedXmlContent = this._parseSectionContent(content);
-
                             // DEBUG ONLY:
-                            // let stringXml = this._convertParsedXmlToString(parsedXmlContent);
+                            // let stringXml = DataDisplayUtils.convertPageContentToString(parsedXmlContent);
                             // console.log(stringXml);
 
-                            section[sectionKey] = parsedXmlContent;
+                            section[sectionKey] = this._parseSectionContent(content);
 
                         }
                     }
@@ -35,97 +40,12 @@ class BookkitParser { // TODO: This class is still quite long, refactor it furth
         return page;
     }
 
-    extractBrickDataValue(pageContent, brickName) {
-        let pageKeys = Object.keys(pageContent);
-        for (let pageKey of pageKeys) {
-            if (pageKey === "sectionList") {
-                let sectionList = pageContent[pageKey];
-                for (let section of sectionList) {
-                    let sectionKeys = Object.keys(section);
-                    for (let sectionKey of sectionKeys) {
-                        if (sectionKey === "content") {
-                            let content = section[sectionKey];
-                            if (content == null) {
-                                continue;
-                            }
-
-                            // Try to search through LSIs:
-                            let parent = content;
-                            do {
-                                let childLsi = this._extractChildWith(parent, "name", "UU5.Bricks.Lsi");
-                                if (childLsi != null) {
-                                    let childLsiItem = this._extractChildWith(childLsi.content, "name", "UU5.Bricks.Lsi.Item", "language", "en");
-                                    if (childLsiItem != null) {
-                                        let theBrick = this._tryToExtractTheBrickDataValue(childLsiItem.content, brickName);
-                                        if (theBrick != null) {
-                                            return theBrick;
-                                        }
-                                        parent = childLsiItem.content;
-                                        continue;
-                                    }
-                                }
-                                break;
-                            } while (parent != null);
-
-                            // Try to at least get the brick out of LSI:
-                            let theBrickOutOfLsi = this._tryToExtractTheBrickDataValue(content, brickName);
-                            if (theBrickOutOfLsi != null) {
-                                return theBrickOutOfLsi;
-                            }
-                        }
-                    }
-                }
-                break;
-            }
-        }
-        return null;
-    }
-
-    _convertParsedXmlToString(parsedXmlContent) { // TODO: do something with this unused method
-        let parsedContentStringArray = [];
-        let parsedElements = [...parsedXmlContent];
-        let parsedElementLevels = [];
-        while (parsedElements.length > 0) {
-            let parsedElement = parsedElements.shift();
-            let currentLevel = parsedElementLevels.length > 0 ? parsedElementLevels.shift() : 0;
-            let rowPadding = "\t".repeat(currentLevel);
-            let elementString = "";
-            if (typeof parsedElement === "string") {
-                elementString += parsedElement.trim();
-                if (elementString.length > 0) {
-                    elementString = rowPadding + elementString.replace(/\n/g, "\n" + rowPadding);
-                }
-            } else {
-                elementString += rowPadding + "<" + parsedElement.name + " ";
-                for (let attribute of parsedElement.attributes) {
-                    elementString += attribute.name;
-                    if (attribute.value !== "") {
-                        elementString += "=\"" + attribute.value.replace(/\n/g, "\n" + rowPadding) + "\"";
-                    }
-                    elementString += " ";
-                }
-
-                if (parsedElement.content.length > 0) {
-                    if (elementString.charAt(elementString.length - 1) === " ") {
-                        elementString = elementString.slice(0, -1);
-                    }
-                    elementString += ">";
-                    parsedElementLevels.unshift(currentLevel);
-                    for (let subElement of parsedElement.content) {
-                        parsedElementLevels.unshift(currentLevel + 1);
-                    }
-                    parsedElements.unshift(...parsedElement.content, "</" + parsedElement.name + ">");
-                } else {
-                    elementString += "/>";
-                }
-            }
-            if (elementString.length > 0) {
-                parsedContentStringArray.push(elementString);
-            }
-        }
-        return parsedContentStringArray.join("\n");
-    }
-
+    /**
+     * Parses value of content attribute of one section from section list of BookKit page source data. This method serves as error-handling wrapper for _parseXml method.
+     * @param content XML (uu5string?) value of the content attribute.
+     * @returns {[]} Array of elements contained in given section content.
+     * @private
+     */
     _parseSectionContent(content) {
         let parsedContent;
         try {
@@ -155,6 +75,13 @@ class BookkitParser { // TODO: This class is still quite long, refactor it furth
 
     }
 
+    /**
+     * Parses value of content attribute of one section from section list of BookKit page source data.
+     *
+     * @param xmlString XML (uu5string?) value of the content attribute.
+     * @returns {[]} Array of elements contained in given section content.
+     * @private
+     */
     _parseXml(xmlString) {
         let elements = []; // Resulting elements array (objects = elements, strings = content between elements.
 
@@ -169,27 +96,25 @@ class BookkitParser { // TODO: This class is still quite long, refactor it furth
         let diveIntoElementContent = false; // Indicate if parser has to jump into content of currently parsed element in the end of parsing current char.
         let diveOutOfElementContent = false; // Indicate if parser has to jump out of content of currently parsed element in the end of parsing current char.
         let attributeValueOpeningChar = null; // Variable for remembering of opening char of currently parsed attribute.
-        let escapedChar = false; // TODO: Maybe will be used later?
+        let escapedChar = false;
         let currentContent = ""; // Currently parsed non-sub-element of currently parsed element.
 
         for (let pos = 0; pos < xmlString.length; pos++) {
             let char = xmlString[pos];
             switch (mode) {
                 case 0: // 0 = Looking for tag.
-                    switch (char) {
-                        case "<":
-                            mode = 1; // Tag found.
-                            if (currentContent !== "") {
-                                if (currentElements.length > 0) {
-                                    currentElements[currentElements.length - 1].content.push(currentContent);
-                                } else {
-                                    elements.push(currentContent);
-                                }
-                                currentContent = "";
+                    if (char === "<") {
+                        mode = 1; // Tag found.
+                        if (currentContent !== "") {
+                            if (currentElements.length > 0) {
+                                currentElements[currentElements.length - 1].content.push(currentContent);
+                            } else {
+                                elements.push(currentContent);
                             }
-                            break;
-                        default:
-                            currentContent += char;
+                            currentContent = "";
+                        }
+                    } else {
+                        currentContent += char;
                     }
                     break;
                 case 1: // 1 = Looking for tag name.
@@ -412,18 +337,12 @@ class BookkitParser { // TODO: This class is still quite long, refactor it furth
 
                     break;
                 case 7: // 7 = End of self-closing tag.
-                    switch (char) {
-                        case ">":
-                            finishElement = true;
-                            mode = 0;
-                            break;
-                        default:
-                            throw {error: 500, mode, char, pos};
+                    if (char === ">") {
+                        finishElement = true;
+                        mode = 0;
+                    } else {
+                        throw {error: 500, mode, char, pos};
                     }
-                    break;
-                case 8: // 8 = Parsing tag end.
-                    // TODO remove this, it seems to be useless.
-                    throw {error: 501, mode, char, pos};
                     break;
                 default:
                     throw {error: 501, mode, char, pos};
@@ -468,6 +387,13 @@ class BookkitParser { // TODO: This class is still quite long, refactor it furth
         return elements;
     }
 
+    /**
+     * Unescapes and parses uu5json value of an attribute found somewhere in section content.
+     *
+     * @param attributeValue String value of an attribute to parse.
+     * @returns {object} Unescaped and parsed uu5json or unchanged input string if it is not uu5json.
+     * @private
+     */
     _parseJsonAttributeValue(attributeValue) {
         if (attributeValue.substring(0,10) === "<uu5json/>") {
             // Unescape the JSON:
@@ -489,37 +415,5 @@ class BookkitParser { // TODO: This class is still quite long, refactor it furth
         } else {
             return attributeValue;
         }
-    }
-
-    _tryToExtractTheBrickDataValue(parent, brickName) {
-        let childBrick = this._extractChildWith(parent, "name", brickName);
-        if (childBrick == null) {
-            let childSection = this._extractChildWith(parent, "name", "UU5.Bricks.Section");
-            if (childSection != null) {
-                childBrick = this._extractChildWith(childSection.content, "name", brickName);
-            }
-        }
-        if (childBrick != null) {
-            let childBrickData = this._extractChildWith(childBrick.attributes, "name", "data");
-            if (childBrickData != null) {
-                return childBrickData.value;
-            }
-        }
-    }
-
-    _extractChildWith(children, key, value, attributeKey, attributeValue) {
-        for (let child of children) {
-            if (child[key] === value) {
-                if (attributeKey != null) {
-                    let attribute = this._extractChildWith(child.attributes, "name", attributeKey);
-                    if (attribute != null && attribute.value === attributeValue) {
-                        return child;
-                    }
-                } else {
-                    return child;
-                }
-            }
-        }
-        return null;
     }
 }
