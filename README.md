@@ -3,6 +3,10 @@ Makes usage of BookKit a little bit better.
 
 Attention! It is quickly written helper and it is not tested well yet. It can be very buggy but it does not write anything into BookKit so you can "only" end with errors in console or not loaded page.
 
+## How to install Tampermonkey script
+1. Install Tampermonkey from https://www.tampermonkey.net/ if you do not have it yet.
+2. Install this user script from URL: [bookkit-helper.user.js](https://github.com/uumnk/bookkit-helper/raw/master/bookkit-helper.user.js)
+
 **Quick guide:**
 1. Put MnkBookKitHelper.user.js into Tampermonkey addon for Firefox and turn it on.
 2. (Re)load some BookKit page with Algorithm and (optionally) Error List (for example some uuCmd).
