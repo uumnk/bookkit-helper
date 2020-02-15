@@ -7,13 +7,13 @@
 // @match        https://uuos9.plus4u.net/uu-bookkitg01-main/*
 // @grant        none
 // @require      gui.js
-// @require      bookkit-parser.js
-// @require      algorithm-parser.js
-// @require      error-list-parser.js
-// @require      compare-utils.js
-// @require      error-list-generator.js
-// @require      data-extract-utils.js
-// @require      data-display-utils.js
+// @require      parsers/bookkit-parser.js
+// @require      parsers/algorithm-parser.js
+// @require      parsers/error-list-parser.js
+// @require      utils/compare-utils.js
+// @require      generators/error-list-generator.js
+// @require      utils/data-extract-utils.js
+// @require      utils/data-display-utils.js
 // ==/UserScript==
 
 (function() {
