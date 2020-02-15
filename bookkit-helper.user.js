@@ -6,7 +6,7 @@
 // @author       Monika
 // @match        https://uuos9.plus4u.net/uu-bookkitg01-main/*
 // @grant        none
-// @require      gui.js
+// @require      gui/gui.js
 // @require      parsers/bookkit-parser.js
 // @require      parsers/algorithm-parser.js
 // @require      parsers/error-list-parser.js
@@ -19,6 +19,11 @@
 (function() {
     'use strict';
 
+    // This is the way to make possible to load classes via JS modules if it is run by test or use already loaded classes if it is run via HTML or Tampermonkey.
+    let _BookkitParser = typeof module !== "undefined" ? require('./parsers/bookkit-parser.js').BookkitParser : BookkitParser;
+    let _AlgorithmParser = typeof module !== "undefined" ? require('./parsers/algorithm-parser.js').AlgorithmParser : AlgorithmParser;
+    let _ErrorListParser = typeof module !== "undefined" ? require('./parsers/error-list-parser.js').ErrorListParser : ErrorListParser;
+
     function main() {
         let gui = new Gui();
         gui.createButton(processData);
@@ -30,13 +35,13 @@
             console.log("MnkBookKitHelper start.");
 
             // Parse page content:
-            let bookkitParser = new BookkitParser();
+            let bookkitParser = new _BookkitParser();
             let pageContent = bookkitParser.parsePageData(jsonString);
             console.log("[MnkBookKitHelper] Parsed content:");
             console.log(pageContent);
 
             // Errors / warnings from Algorithm:
-            let algorithmParser = new AlgorithmParser();
+            let algorithmParser = new _AlgorithmParser();
             let errorsAndWarnings = algorithmParser.extractErrorsAndWarningsFromAlgorithm(pageContent);
 
             // Count of errors / warnings from Algorithm:
@@ -49,7 +54,7 @@
             stringResult += errorsAndWarningsCountString + "\n";
 
             // Errors / warnings from Error List:
-            let errorListParser = new ErrorListParser();
+            let errorListParser = new _ErrorListParser();
             let errorsList = errorListParser.extractErrorsAndWarningsFromErrorList(pageContent);
 
             // Count of errors / warnings from Error List:
@@ -108,4 +113,9 @@
     }
 
     setTimeout(main, 5000);
+
+    if (typeof module !== "undefined") {
+        // If run via test, this is needed to make the test work.
+        module.exports = { main, processData };
+    }
 })();

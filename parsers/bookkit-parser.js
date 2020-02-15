@@ -417,3 +417,8 @@ class BookkitParser {
         }
     }
 }
+
+if (typeof module !== "undefined") {
+    // If run via test, this is needed to make the test work.
+    module.exports = { BookkitParser };
+}
