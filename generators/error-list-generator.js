@@ -29,13 +29,13 @@ class ErrorListGenerator {
             usedErrors.push(code);
 
             let type = error.type.charAt(0).toUpperCase() + error.type.slice(1).replace(/\n/g, "").trim();
-            let message = error.message.replace(/\n/g, "").trim();
-            let params = error.params.replace(/\n/g, "\\\\\\\\n").replace(/"/g, "\\\\\\\\\\\"").trim();
-            let paramsArray = params.split("\\\\\\\\n");
+            let message = error.message.replace(/\n/g, "").replace(/"/g, "\\\\\\\\\"").trim();
+            let params = error.params.replace(/"/g, "\\\\\\\\\"").trim();
+            let paramsArray = params.split("\\n");
             for (let j = 0; j < paramsArray.length; j++) {
                 paramsArray[j] = paramsArray[j].replace(/\/\/.*$/, "").trim();
             }
-            params = paramsArray.join("\\\\\\\\n");
+            params = paramsArray.join("\\n").replace(/\\n/g, " ");
             let props = `,\\n    \\"${params}\\"\\n`;
 
             errorListString += `\\n  [\\n    \\"${code}\\",\\n    \\"${type}\\",\\n    \\"${message}\\"${props}  ]`;
@@ -46,4 +46,9 @@ class ErrorListGenerator {
         errorListString += `  }`;
         return errorListString;
     }
+}
+
+if (typeof module !== "undefined") {
+    // If run via test, this is needed to make the test work.
+    module.exports = { ErrorListGenerator };
 }
