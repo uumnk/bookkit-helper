@@ -49,7 +49,7 @@ class BookkitParser {
     _parseSectionContent(content) {
         let parsedContent;
         try {
-            parsedContent = this._parseXml(content);
+            parsedContent = this._parseUu5String(content);
         } catch (e) {
             switch (e.error) {
                 case 500:
@@ -78,11 +78,11 @@ class BookkitParser {
     /**
      * Parses value of content attribute of one section from section list of BookKit page source data.
      *
-     * @param xmlString XML (uu5string?) value of the content attribute.
+     * @param uu5String uu5string value of the content attribute.
      * @returns {[]} Array of elements contained in given section content.
      * @private
      */
-    _parseXml(xmlString) {
+    _parseUu5String(uu5String) {
         let elements = []; // Resulting elements array (objects = elements, strings = content between elements.
 
         let mode = 0; // Current pasing mode (see switch below).
@@ -99,8 +99,8 @@ class BookkitParser {
         let escapedChar = false;
         let currentContent = ""; // Currently parsed non-sub-element of currently parsed element.
 
-        for (let pos = 0; pos < xmlString.length; pos++) {
-            let char = xmlString[pos];
+        for (let pos = 0; pos < uu5String.length; pos++) {
+            let char = uu5String[pos];
             switch (mode) {
                 case 0: // 0 = Looking for tag.
                     if (char === "<") {
@@ -352,7 +352,7 @@ class BookkitParser {
             // console.log(char + ", pos=" + pos + ", mode=" + mode + ", finishAttribute=" + finishAttribute + ", diveIn=" + diveIntoElementContent + ", finishElement=" + finishElement + ", diveOut=" + diveOutOfElementContent + ".");
 
             if (finishAttribute) {
-                currentAttribute.value = this._parseJsonAttributeValue(currentAttribute.value);
+                currentAttribute.value = this._parseUu5JsonAttributeValue(currentAttribute.value);
                 currentElement.attributes.push(currentAttribute);
                 currentAttribute = {name: "", value: ""};
                 finishAttribute = false;
@@ -394,7 +394,7 @@ class BookkitParser {
      * @returns {object} Unescaped and parsed uu5json or unchanged input string if it is not uu5json.
      * @private
      */
-    _parseJsonAttributeValue(attributeValue) {
+    _parseUu5JsonAttributeValue(attributeValue) {
         if (attributeValue.substring(0,10) === "<uu5json/>") {
             // Unescape the JSON:
             let escapedJson = attributeValue.substring(10, attributeValue.length);
